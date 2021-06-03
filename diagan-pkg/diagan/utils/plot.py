@@ -245,8 +245,7 @@ def calculate_scores(logits, start_epoch=50, end_epoch=75, clip_val=1.5, conf=1)
     score_dict['ldrv'] = np.var(logits_arr, axis=0, ddof=1)
     score_dict['ldrm'] = logits_arr.mean(0)
     for t in np.arange(0.1, 10.0, 0.1):
-        for beta in np.arange(1.0, 6.0, 1.0):
-            score_dict[f'ldr_conf_{t:.1f}_ratio_50_beta_{beta}'] = clip_max_ratio(clip_min((logits_arr.mean(0) + t * np.std(logits_arr, 0, ddof=1))) ** beta, ratio=50)
+        score_dict[f'ldr_conf_{t:.1f}_ratio_50'] = clip_max_ratio(clip_min((logits_arr.mean(0) + t * np.std(logits_arr, 0, ddof=1))), ratio=50)
     return score_dict
 
 def plot_intensity_histogram(sample_weights, dataset, generated_images, save_path, prefix):

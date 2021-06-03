@@ -1,5 +1,5 @@
 # Self-Diagnosing GAN
-Code for Self-Diagnosing GAN: Diagnosing Underrepresented Samples in Generative Adversarial Networks (https://arxiv.org/abs/2102.12033)
+Code for Self-Diagnosing GAN: Diagnosing Underrepresented Samples in Generative Adversarial Networks
 
 ## Setup
 This setting requires CUDA 11.
@@ -48,12 +48,12 @@ python train_mimicry_phase1.py --exp_name celeba-topk --dataset celeba --root ./
 1. Dia-GAN (Ours)
 * CIFAR-10
 ```
-python train_mimicry_phase2.py --gpu 0 --exp_name cifar10-phase2 --resample_score ldr_conf_0.3_ratio_50_beta_1.0 --baseline_exp_name cifar10-phase1 --seed 1 --p1_step 40000 --dataset celeba --root ./dataset/cifar10  --loss_type ns  --num_steps 50000 --model sngan
+python train_mimicry_phase2.py --gpu 0 --exp_name cifar10-phase2 --resample_score ldr_conf_0.3_ratio_50 --baseline_exp_name cifar10-phase1 --seed 1 --p1_step 40000 --dataset celeba --root ./dataset/cifar10  --loss_type ns  --num_steps 50000 --model sngan
 ```
 
 * CelebA
 ```
-python train_mimicry_phase2.py --gpu 0 --exp_name celeba-phase2 --resample_score ldr_conf_5.0_ratio_50_beta_1.0 --baseline_exp_name celeba-phase1 --seed 1 --p1_step 60000 --dataset celeba --root ./dataset/celeba  --loss_type ns  --num_steps 75000 --model sngan
+python train_mimicry_phase2.py --gpu 0 --exp_name celeba-phase2 --resample_score ldr_conf_5.0_ratio_50 --baseline_exp_name celeba-phase1 --seed 1 --p1_step 60000 --dataset celeba --root ./dataset/celeba  --loss_type ns  --num_steps 75000 --model sngan
 ```
 
 2. GOLD Reweight
@@ -94,7 +94,7 @@ python train_mimicry_color_mnist_phase1.py --gpu 0 --exp_name rd0.99-n10000-mnis
 ### Phase 2
 1. Dia-GAN (Ours)
 ```
-python train_mimicry_color_mnist_phase2.py --gpu 0 --exp_name rd0.99-mnist_dcgan-phase2 --baseline_exp_name rd0.99-n10000-mnist_dcgan-bs64-loss_ns --model mnist_dcgan --major_ratio 0.99 --p1_step 15000 --resample_score ldr_conf_1.0_ratio_50_beta_3.0 --batch_size 64 --loss_type ns --use_eval_logits 0
+python train_mimicry_color_mnist_phase2.py --gpu 0 --exp_name rd0.99-mnist_dcgan-phase2 --baseline_exp_name rd0.99-n10000-mnist_dcgan-bs64-loss_ns --model mnist_dcgan --major_ratio 0.99 --p1_step 15000 --resample_score ldr_conf_1.0_ratio_50 --batch_size 64 --loss_type ns --use_eval_logits 0
 ```
 
 2. GOLD
@@ -114,4 +114,36 @@ Then, we measure the difference of RE scores between baseline and our method for
 2. Evaluation
 ```
 python eval_ae_score_color_mnist.py --resample_exp_path ./exp_results/rd0.99-mnist_dcgan-phase2 --baseline_exp_path ./exp_results/rd0.99-n10000-mnist_dcgan-bs64-loss_ns --major_ratio 0.99
+```
+
+## Train - MNIST-FMNIST
+1. Phase 1
+```
+python train_mimicry_mnist_fmnist_phase1.py --exp_name fmnist-0.9-dcgan-seed1-phase1 --loss_type ns --model mnist_dcgan --gpu 2 --seed 1 --major_ratio 0.9 --num_data 60000
+```
+
+2. Phase 2
+```
+python train_mimicry_mnist_fmnist_phase2.py --exp_name fmnist-0.9-dcgan-seed1-phase2  --baseline_exp_name fmnist-0.9-dcgan-seed1-phase1 --loss_type ns --model mnist_dcgan --gpu 0 --seed 3 --major_ratio 0.9 --num_data 60000 --resample_score ldr_conf_5.0_ratio_50 --num_steps 20000 --p1_step 15000 --use_eval_logits 1
+```
+
+
+## StyleGAN2
+We use the implementation of https://github.com/rosinality/stylegan2-pytorch
+
+1. Prepare data
+Downlaod FFHQ dataset from https://github.com/NVlabs/ffhq-dataset
+Then, convert to LMDB format. 
+```
+python prepare_data.py --out ./dataset/ffhq/lmdb_256.mdb --size 256 --path ./dataset/ffhq
+```
+
+2. Train - Phase 1
+```
+python -m torch.distributed.launch --nproc_per_node=4 --master_port=15694 train_ffhq.py --root ./dataset/ffhq/lmdb_256.mdb --batch 4 --dataset ffhq --exp_name ffhq-seed1 --seed 1
+```
+
+3. Train - Phase 2
+```
+python -m torch.distributed.launch --nproc_per_node=4 --master_port=15694 train_ffhq_phase2.py --root ./dataset/ffhq/lmdb_256.mdb --batch 4 --dataset ffhq  --exp_name ffhq-phase2-seed1 --baseline_exp_name ffhq-seed1 --seed 1 --resample_score ldr_conf_3.0_ratio_50
 ```
