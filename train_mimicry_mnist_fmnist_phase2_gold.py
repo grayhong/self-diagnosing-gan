@@ -2,7 +2,6 @@ import argparse
 import os
 from pathlib import Path
 
-import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 from torch.utils import data
@@ -13,25 +12,16 @@ from diagan.datasets.predefined import (
 from diagan.models.predefined_models import get_gan_model
 from diagan.trainer.trainer import LogTrainer
 from diagan.utils.plot import (
-    plot_color_mnist_generator, print_num_params
+    plot_color_mnist_generator, plot_data,
+                                    print_num_params
 )
 from diagan.utils.settings import set_seed
 
 
 def get_dataloader(dataset, batch_size=128, clip=False, weights=None):
     if weights is not None:
-        eps = 1e-1
-        if clip:
-            mean = weights.mean()
-            var = weights.var()
-            k = 2
-            upper_bound = mean + k * var
-            lower_bound = max(mean - k * var, eps)
-            weight_list = np.array([lower_bound if i < lower_bound else (upper_bound if i > upper_bound else i) for i in weights])
-        else:
-            weight_list = np.array([eps if i < eps else i for i in weights])
-        sampler = data.WeightedRandomSampler(weight_list, len(weight_list), replacement=True)
-        print(f'weight_list max: {weight_list.max()} min: {weight_list.min()} mean: {weight_list.mean()} var: {weight_list.var()}')
+        sampler = data.WeightedRandomSampler(weights, len(weights), replacement=True)
+        print(f'weight_list max: {weights.max()} min: {weights.min()} mean: {weights.mean()} var: {weights.var()}')
     else:
         sampler = None
     dataloader = data.DataLoader(
@@ -45,14 +35,16 @@ def get_dataloader(dataset, batch_size=128, clip=False, weights=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", "-d", default="color_mnist", type=str)
-    parser.add_argument("--root", "-r", default="./dataset/colour_mnist", type=str, help="dataset dir")
+    parser.add_argument("--dataset", "-d", default="mnist_fmnist", type=str)
+    parser.add_argument("--root", "-r", default="./dataset/mnist_fmnist", type=str, help="dataset dir")
     parser.add_argument("--work_dir", default="./exp_results", type=str, help="output dir")
-    parser.add_argument("--exp_name", default="colour_mnist", type=str, help="exp name")
-    parser.add_argument("--loss_type", default="ns", type=str, help="loss type")
+    parser.add_argument("--exp_name", default="mnist_fmnist", type=str, help="exp name")
+    parser.add_argument("--baseline_exp_name", default="mnist_fmnist_baseline", type=str, help="exp name")
     parser.add_argument("--model", default="mnistgan", type=str, help="network model")
     parser.add_argument('--gpu', default='0', type=str,
                         help='id(s) for CUDA_VISIBLE_DEVICES')
+    parser.add_argument('--quiet', dest='quiet', action='store_true',
+                        help='do not use pbar')
     parser.add_argument('--num_pack', default=1, type=int)
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--seed', default=1, type=int)
@@ -61,16 +53,23 @@ def main():
     parser.add_argument('--logit_save_steps', default=100, type=int)
     parser.add_argument('--decay', default='None', type=str)
     parser.add_argument('--n_dis', default=1, type=int)
+    parser.add_argument('--p1_step', default=10000, type=int)
     parser.add_argument('--major_ratio', default=0.99, type=float)
     parser.add_argument('--num_data', default=10000, type=int)
-    parser.add_argument('--topk', default=0, type=int)
-    parser.add_argument('--resample_score', type=str)
+    parser.add_argument("--loss_type", default="ns", type=str, help="loss type")
+    parser.add_argument('--use_eval_logits', type=int)
+    # parser.add_argument('--gold_step', type=int, default=30000, help='start step for gold reweight')
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     output_dir = f'{args.work_dir}/{args.exp_name}'
     save_path = Path(output_dir)
     save_path.mkdir(parents=True, exist_ok=True)
+
+    baseline_output_dir = f'{args.work_dir}/{args.baseline_exp_name}'
+    baseline_save_path = Path(baseline_output_dir)
+
+    prefix = args.exp_name.split('/')[-1]
 
     set_seed(args.seed)
 
@@ -80,14 +79,15 @@ def main():
     else:
         device = "cpu"
 
-
     netG, netD, optG, optD = get_gan_model(
         dataset_name=args.dataset,
         model=args.model,
-        num_pack=args.num_pack,
         loss_type=args.loss_type,
-        topk=args.topk == 1,
+        gold=True # check this
     )
+
+    netG_ckpt_path = baseline_save_path / f'checkpoints/netG/netG_{args.p1_step}_steps.pth'
+    netD_ckpt_path = baseline_save_path / f'checkpoints/netD/netD_{args.p1_step}_steps.pth'
 
     print_num_params(netG, netD)
 
@@ -103,7 +103,11 @@ def main():
         batch_size=args.batch_size,
         weights=None)
 
-    print(args)
+    data_iter = iter(dl_train)
+    imgs, _, _, _ = next(data_iter)
+    plot_data(imgs, num_per_side=8, save_path=save_path, file_name=f'{prefix}_resampled_train_data_p2', vis=None)
+
+    print(args, netG_ckpt_path, netD_ckpt_path)
 
     # Start training
     trainer = LogTrainer(
@@ -113,6 +117,8 @@ def main():
         netG=netG,
         optD=optD,
         optG=optG,
+        netG_ckpt_file=netG_ckpt_path,
+        netD_ckpt_file=netD_ckpt_path,
         n_dis=args.n_dis,
         num_steps=args.num_steps,
         save_steps=1000,
@@ -122,17 +128,12 @@ def main():
         log_dir=output_dir,
         print_steps=10,
         device=device,
-        topk=args.topk,
-        save_logits=args.num_pack==1,
-        save_eval_logits=False,)
+        save_logits=False,
+        gold=True,
+        gold_step=args.p1_step
+    )
     trainer.train()
 
-    plot_color_mnist_generator(netG, save_path=save_path, file_name='eval_p1')
-
-    # if args.num_pack == 1:
-    #     score_dict = calculate_scores(trainer.logit_results['netD_train'], start_epoch=args.num_steps // 2, end_epoch=args.num_steps)
-    #     plot_score_sort(ds_train, score_dict, save_path=save_path, phase='p1')
-    
 
 if __name__ == '__main__':
     main()

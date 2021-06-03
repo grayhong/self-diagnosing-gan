@@ -30,7 +30,7 @@ class GeneratedDataset(Dataset):
 
 def get_generated_dataset(dataset_name, root):
     transform = get_transform(dataset_name)
-    if dataset_name == 'mnist_c':
+    if dataset_name in ['mnist_fmnist']:
         mode = 'L'
     else:
         mode = 'RGB'

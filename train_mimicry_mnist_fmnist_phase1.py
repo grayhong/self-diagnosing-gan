@@ -5,7 +5,11 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
+import torch.nn as nn
+import torch_mimicry as mmc
+from PIL import Image
 from torch.utils import data
+
 
 from diagan.datasets.predefined import (
     get_predefined_dataset
@@ -45,14 +49,16 @@ def get_dataloader(dataset, batch_size=128, clip=False, weights=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", "-d", default="color_mnist", type=str)
-    parser.add_argument("--root", "-r", default="./dataset/colour_mnist", type=str, help="dataset dir")
+    parser.add_argument("--dataset", "-d", default="mnist_fmnist", type=str)
+    parser.add_argument("--root", "-r", default="./dataset/mnist_fmnist", type=str, help="dataset dir")
     parser.add_argument("--work_dir", default="./exp_results", type=str, help="output dir")
-    parser.add_argument("--exp_name", default="colour_mnist", type=str, help="exp name")
+    parser.add_argument("--exp_name", default="mnist_fmnist", type=str, help="exp name")
     parser.add_argument("--loss_type", default="ns", type=str, help="loss type")
-    parser.add_argument("--model", default="mnistgan", type=str, help="network model")
+    parser.add_argument("--model", default="mnist_dcgan", type=str, help="network model")
     parser.add_argument('--gpu', default='0', type=str,
                         help='id(s) for CUDA_VISIBLE_DEVICES')
+    parser.add_argument('--quiet', dest='quiet', action='store_true',
+                        help='do not use pbar')
     parser.add_argument('--num_pack', default=1, type=int)
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--seed', default=1, type=int)
@@ -123,11 +129,8 @@ def main():
         print_steps=10,
         device=device,
         topk=args.topk,
-        save_logits=args.num_pack==1,
-        save_eval_logits=False,)
+        save_logits=args.num_pack==1,)
     trainer.train()
-
-    plot_color_mnist_generator(netG, save_path=save_path, file_name='eval_p1')
 
     # if args.num_pack == 1:
     #     score_dict = calculate_scores(trainer.logit_results['netD_train'], start_epoch=args.num_steps // 2, end_epoch=args.num_steps)

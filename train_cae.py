@@ -24,7 +24,6 @@ from diagan.utils.plot import (
 from diagan.utils.settings import set_seed
 from diagan.utils.trainer import AverageMeter, save_np_arr
 
-
 def test_cae(data_loader, model, device='cuda'):
     model.eval()
     losses = []
@@ -36,7 +35,7 @@ def test_cae(data_loader, model, device='cuda'):
             outputs = model(inputs)
             batch_size = inputs.size(0)
             loss = outputs.sub(inputs).pow(2).view(batch_size, -1)
-            loss = loss.sum(dim=1, keepdim=False)
+            loss = loss.sum(dim=1, keepdim=False).sqrt().div(32)
             loss_arr[idx.cpu().numpy()] = loss.detach().cpu().numpy()
     model.train()
     return loss_arr
@@ -173,18 +172,12 @@ def main():
         
     print(f'use drs: {use_drs}')
     
-    if args.dataset == 'mnist_c':
-        ds_test = get_predefined_dataset(
-            dataset_name=args.dataset,
-            root=args.root,
-        )
-    else:
-        ds_test = get_predefined_dataset(
-            dataset_name=args.dataset,
-            root=args.root,
-            major_ratio=args.major_ratio,
-            num_data=args.num_data
-        )
+    ds_test = get_predefined_dataset(
+        dataset_name=args.dataset,
+        root=args.root,
+        major_ratio=args.major_ratio,
+        num_data=args.num_data
+    )
     dl_test = get_dataloader(dataset=ds_test, batch_size=args.batch_size)
 
 

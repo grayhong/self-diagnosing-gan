@@ -319,6 +319,25 @@ def plot_color_mnist_generator(netG, save_path=None, file_name='plot_generator')
     netG.train()
 
 
+def plot_mnist_fmnist_generator(netG, save_path=None, file_name='plot_generator'):
+    print(f'plot_color_mnist_generator file_name: {file_name}')
+    # grid_size = 49
+    netG.eval()
+    with torch.no_grad():
+        num_data = 10000
+        batch_size = 100
+        test_imgs = None
+        for i in range(num_data // batch_size):
+            tmp_imgs = netG.generate_images(batch_size, 'cuda').detach().cpu()
+            if test_imgs is None:
+                test_imgs = tmp_imgs
+            else:
+                test_imgs = torch.cat((test_imgs, tmp_imgs), 0)
+        # test_imgs = netG.generate_images(num_data, 'cuda').detach().cpu()
+        # plot_data(test_imgs, num_per_side=10, save_path=save_path, file_name=f'{file_name}_all_100')
+        show_images_grid(test_imgs, num_images=100, save_path=save_path, file_name=f'{file_name}_all')
+    netG.train()
+
 
 def _get_fixed_noise(log_dir, nz, num_samples, device, output_dir=None):
     """

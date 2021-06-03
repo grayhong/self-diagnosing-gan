@@ -11,6 +11,7 @@ from diagan.models.mnist import (MNIST_DCGAN_Discriminator, MNIST_DCGAN_Generato
 from diagan.models.topk_models import (TopkSNGANGenerator32, TopkSNGANGenerator64,
                                             TopkSSGANGenerator32, TopkSSGANGenerator64,
                                             TopkInfoMaxGANGenerator32, TopkInfoMaxGANGenerator64)
+from diagan.models.inclusive_gan import InclusiveMNISTDCGANGenerator
 from diagan.models.toy import Toy_Discriminator, Toy_Generator
 
 
@@ -100,11 +101,14 @@ def get_toy_disc(model='toy', **kwargs):
     optD = optim.Adam(netD.parameters(), 1e-4, betas=(0.5, 0.999))
     return netD, optD
 
-def get_color_mnist_gen(model='mnist_dcgan', loss_type='hinge', gold=False, num_pack=1, topk=False, **kwargs):
+def get_color_mnist_gen(model='mnist_dcgan', reweight=False, loss_type='ns', gold=False, num_pack=1, topk=False, **kwargs):
     model_dict = {
         'mnist_dcgan': MNIST_DCGAN_Generator,
     }
-    netG = model_dict[model](loss_type=loss_type, topk=topk, **kwargs)
+    if 'inclusive' in kwargs and kwargs['inclusive']:
+        netG = InclusiveMNISTDCGANGenerator(loss_type=loss_type, topk=topk, **kwargs)
+    else:
+        netG = model_dict[model](loss_type=loss_type, topk=topk, **kwargs)
     optG = optim.Adam(netG.parameters(), 1e-4, betas=(0.5, 0.9))
     return netG, optG
 
@@ -117,20 +121,28 @@ def get_color_mnist_disc(model='mnist_dcgan', loss_type='hinge', gold=False, num
     optD = optim.Adam(netD.parameters(), 1e-4, betas=(0.5, 0.9))
     return netD, optD
 
-def get_mnist_fmnist_gen(model='mnistgan', loss_type='ns', **kwargs):
+def get_mnist_fmnist_gen(model='mnist_dcgan', loss_type='hinge', gold=False, num_pack=1, topk=False, **kwargs):
     model_dict = {
         'mnist_dcgan': MNIST_DCGAN_Generator,
     }
-    netG = model_dict[model](nc=1, loss_type=loss_type, **kwargs)
+    if 'inclusive' in kwargs and kwargs['inclusive']:
+        netG = InclusiveMNISTDCGANGenerator(nc=1, loss_type=loss_type, topk=topk, **kwargs)
+    else:
+        netG = model_dict[model](nc=1, loss_type=loss_type, topk=topk, **kwargs)
     optG = optim.Adam(netG.parameters(), 1e-4, betas=(0.5, 0.9))
     return netG, optG
 
 
-def get_mnist_fmnist_disc(model='mnistgan', loss_type='ns', **kwargs):
+def get_mnist_fmnist_disc(model='mnist_dcgan', loss_type='hinge', gold=False, num_pack=1, topk=False, **kwargs):
     model_dict = {
         'mnist_dcgan': MNIST_DCGAN_Discriminator,
     }
-    netD = model_dict[model](nc=1, loss_type=loss_type, **kwargs)
+    if model == 'sngan':
+        if gold or topk or num_pack != 1:
+            raise NotImplementedError
+        netD = model_dict[model]()
+    else:
+        netD = model_dict[model](nc=1, use_gold=gold, loss_type=loss_type, num_pack=num_pack, **kwargs)
     optD = optim.Adam(netD.parameters(), 1e-4, betas=(0.5, 0.9))
     return netD, optD
 

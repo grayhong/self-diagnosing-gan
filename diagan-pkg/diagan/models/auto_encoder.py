@@ -194,13 +194,13 @@ DATASET_DICT = {
     'cifar10': CAE32,
     'color_mnist': CAE32,
     'multi_color_mnist':CAE32,
-    'mnist_c': CAE32,
+    'mnist_fmnist': CAE32,
 }
 
 
 def get_ae_model(dataset_name):
     nc = 3
-    if dataset_name == 'mnist_c':
+    if dataset_name == 'mnist_fmnist':
         nc = 1
     ae = DATASET_DICT[dataset_name](in_channels=nc)
     return ae
