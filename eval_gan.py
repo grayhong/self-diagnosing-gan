@@ -8,7 +8,7 @@ import torch_mimicry as mmc
 
 from diagan.models.predefined_models import get_gan_model
 from diagan.utils.settings import set_seed
-from diagan.trainer.evaluate import evaluate_pr
+from diagan.trainer.evaluate import evaluate_pr, evaluate_ffhq
 
 def main():
     parser = argparse.ArgumentParser()
@@ -53,45 +53,64 @@ def main():
 
     if args.dataset == 'celeba':
         dataset = 'celeba_64'
+    elif args.dataset == 'imagenet':
+        dataset = 'imagenet_128'
     else:
         dataset = args.dataset
 
-    if args.dataset == 'celeba':
-        stats_name = 'celeba_64_202k_run_0'
-    elif args.dataset == 'cifar10':
-        stats_name = 'cifar10_train'
-    stats_file = f'./precalculated_statistics/fid_stats_{stats_name}.npz'
-    
-    # Evaluate fid
-    mmc.metrics.evaluate(metric='fid',
-                         log_dir=save_path,
-                         netG=netG,
-                         dataset=dataset,
-                         num_real_samples=50000,
-                         num_fake_samples=50000,
-                         evaluate_step=args.netG_ckpt_step,
-                         num_runs=1,
-                         device=device,
-                         stats_file=stats_file)
+    if args.dataset == 'ffhq':
+        stats_file = './precalculated_statistics/fid_stats_ffhq_69k_run_0.npz'
+        # Evaluate fid
+        evaluate_ffhq(metric='fid',
+                        log_dir=save_path,
+                        data_path=args.root,
+                        netG=netG,
+                        dataset=dataset,
+                        num_real_samples=50000,
+                        num_fake_samples=50000,
+                        evaluate_step=args.netG_ckpt_step,
+                        num_runs=1,
+                        device=device,
+                        stats_file=stats_file)
+    else:
+        if args.dataset == 'celeba':
+            stats_name = 'celeba_64_202k_run_0'
+        elif args.dataset == 'cifar10':
+            stats_name = 'cifar10_train'
+        elif args.dataset == 'imagenet':
+            stats_name = 'imagenet_128_50k_run_0'
+        stats_file = f'./precalculated_statistics/fid_stats_{stats_name}.npz'
 
-    # Evaluate inception score
-    mmc.metrics.evaluate(metric='inception_score',
-                         log_dir=save_path,
-                         netG=netG,
-                         num_samples=50000,
-                         evaluate_step=args.netG_ckpt_step,
-                         num_runs=1,
-                         device=device)
+        # Evaluate fid
+        mmc.metrics.evaluate(metric='fid',
+                            log_dir=save_path,
+                            netG=netG,
+                            dataset=dataset,
+                            num_real_samples=50000,
+                            num_fake_samples=50000,
+                            evaluate_step=args.netG_ckpt_step,
+                            num_runs=1,
+                            device=device,
+                            stats_file=stats_file)
     
-    # Evaluate PR
-    evaluate_pr(log_dir=save_path,
-                netG=netG,
-                dataset=dataset,
-                num_real_samples=10000,
-                num_fake_samples=10000,
-                evaluate_step=args.netG_ckpt_step,
-                num_runs=1,
-                device=device,)
+        # Evaluate inception score
+        mmc.metrics.evaluate(metric='inception_score',
+                             log_dir=save_path,
+                             netG=netG,
+                             num_samples=50000,
+                             evaluate_step=args.netG_ckpt_step,
+                             num_runs=1,
+                             device=device)
+        
+        # Evaluate PR
+        evaluate_pr(log_dir=save_path,
+                    netG=netG,
+                    dataset=dataset,
+                    num_real_samples=10000,
+                    num_fake_samples=10000,
+                    evaluate_step=args.netG_ckpt_step,
+                    num_runs=1,
+                    device=device,)
 
 if __name__ == '__main__':
     main()

@@ -95,3 +95,31 @@ def compute_pr(real_features, fake_features, nearest_k, device=None):
     ).any(axis=1).mean()
 
     return dict(precision=precision, recall=recall)
+
+
+def compute_partial_recall(partial_real_features, fake_features, nearest_k, device=None):
+    """
+    Computes partial recall given two manifolds.
+
+    Args:
+        real_features: numpy.ndarray([N, feature_dim], dtype=np.float32)
+        fake_features: numpy.ndarray([N, feature_dim], dtype=np.float32)
+        nearest_k: int.
+    Returns:
+        dict of partial recall.
+    """
+
+    print('Num real: {} Num fake: {}'
+          .format(partial_real_features.shape[0], fake_features.shape[0]))
+
+    fake_nearest_neighbour_distances = compute_nearest_neighbour_distances(
+        fake_features, nearest_k, device=device)
+    distance_real_fake = compute_pairwise_distance(
+        partial_real_features, fake_features, device=device)
+
+    recall = (
+            distance_real_fake <
+            np.expand_dims(fake_nearest_neighbour_distances, axis=0)
+    ).any(axis=1).mean()
+
+    return dict(recall=recall)

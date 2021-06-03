@@ -12,7 +12,7 @@ import torch
 from torch_mimicry.datasets.image_loader import get_dataset_images
 from torch_mimicry.metrics.inception_model import inception_utils
 
-from .compute_pr import compute_pr
+from diagan.trainer.compute_pr import compute_pr
 
 
 
