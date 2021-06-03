@@ -13,12 +13,12 @@ from torch_mimicry.utils import common
 
 from torchvision import utils as vutils
 
-from diagan.trainer.distributed import *
-from diagan.trainer.pr_score import pr_score
-from diagan.trainer.fid_score import fid_score
-from diagan.trainer.compute_fid_with_index import fid_score_with_index
-from diagan.trainer.compute_fid_with_attr import fid_score_with_attr
-from diagan.trainer.pr_score_with_attr import partial_recall_score_with_attr
+from .distributed import *
+from .pr_score import pr_score
+from .fid_score import fid_score
+from .compute_fid_with_index import fid_score_with_index
+from .compute_fid_with_attr import fid_score_with_attr
+from .pr_score_with_attr import partial_recall_score_with_attr
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))

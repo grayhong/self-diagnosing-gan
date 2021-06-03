@@ -113,7 +113,7 @@ Then, we measure the difference of RE scores between baseline and our method for
 
 2. Evaluation
 ```
-python eval_ae_score_color_mnist.py --resample_exp_path ./exp_results/rd0.99-mnist_dcgan-phase2 --baseline_exp_path ./exp_results/rd0.99-n10000-mnist_dcgan-bs64-loss_ns --major_ratio 0.99
+python eval_ae_score.py --resample_exp_path ./exp_results/rd0.99-mnist_dcgan-phase2 --baseline_exp_path ./exp_results/rd0.99-n10000-mnist_dcgan-bs64-loss_ns --major_ratio 0.99
 ```
 
 ## Train - MNIST-FMNIST
@@ -127,9 +127,15 @@ python train_mimicry_mnist_fmnist_phase1.py --exp_name fmnist-0.9-dcgan-seed1-ph
 python train_mimicry_mnist_fmnist_phase2.py --exp_name fmnist-0.9-dcgan-seed1-phase2  --baseline_exp_name fmnist-0.9-dcgan-seed1-phase1 --loss_type ns --model mnist_dcgan --gpu 0 --seed 3 --major_ratio 0.9 --num_data 60000 --resample_score ldr_conf_5.0_ratio_50 --num_steps 20000 --p1_step 15000 --use_eval_logits 1
 ```
 
+## Eval - MNIST-FMNIST
+```
+python eval_ae_score.py -d mnist_fmnist -r ./dataset/mnist_fmnist --baseline_exp_path exp_results/mf0.9-n60000-mnist_dcgan-bs64-loss_ns-seed1-inclusive --resample_exp_path exp_results/mf0.9-n60000-mnist_dcgan-bs64-loss_ns-seed1-inclusive --resample_score ldr_conf_3.0_ratio_50_beta_1.0 --use_loss --major_ratio 0.9 --num_data 60000 --seed 1 --name inclusive
+```
+
 
 ## StyleGAN2
-We use the implementation of https://github.com/rosinality/stylegan2-pytorch
+We use the implementation of https://github.com/rosinality/stylegan2-pytorch .
+All the commands should be executed inside the stylegan2 directory.
 
 1. Prepare data
 Downlaod FFHQ dataset from https://github.com/NVlabs/ffhq-dataset
@@ -146,4 +152,9 @@ python -m torch.distributed.launch --nproc_per_node=4 --master_port=15694 train_
 3. Train - Phase 2
 ```
 python -m torch.distributed.launch --nproc_per_node=4 --master_port=15694 train_ffhq_phase2.py --root ./dataset/ffhq/lmdb_256.mdb --batch 4 --dataset ffhq  --exp_name ffhq-phase2-seed1 --baseline_exp_name ffhq-seed1 --seed 1 --resample_score ldr_conf_3.0_ratio_50
+```
+
+4. Evaluate
+```
+python eval_gan_drs.py -d ffhq -r ./dataset/ffhq/lmdb_256.mdb --exp_name stylegan2-ffhq-phase2 --model stylegan2 --seed 1 --netG_ckpt_step 250000 --gpu 0
 ```
