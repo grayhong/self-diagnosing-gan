@@ -48,7 +48,7 @@ python train_mimicry_phase1.py --exp_name celeba-topk --dataset celeba --root ./
 1. Dia-GAN (Ours)
 * CIFAR-10
 ```
-python train_mimicry_phase2.py --gpu 0 --exp_name cifar10-phase2 --resample_score ldr_conf_0.3_ratio_50 --baseline_exp_name cifar10-phase1 --seed 1 --p1_step 40000 --dataset celeba --root ./dataset/cifar10  --loss_type ns  --num_steps 50000 --model sngan
+python train_mimicry_phase2.py --gpu 0 --exp_name cifar10-phase2 --resample_score ldr_conf_0.3_ratio_50 --baseline_exp_name cifar10-phase1 --seed 1 --p1_step 40000 --dataset cifar10 --root ./dataset/cifar10  --loss_type ns  --num_steps 50000 --model sngan
 ```
 
 * CelebA
