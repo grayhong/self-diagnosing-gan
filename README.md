@@ -1,4 +1,4 @@
-# Self-Diagnosing GAN
+# Self-Diagnosing GAN (NeurIPS 2021)
 Code for Self-Diagnosing GAN: Diagnosing Underrepresented Samples in Generative Adversarial Networks (NeurIPS 2021)
 
 ## Setup
