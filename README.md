@@ -1,5 +1,5 @@
 # Self-Diagnosing GAN
-Code for Self-Diagnosing GAN: Diagnosing Underrepresented Samples in Generative Adversarial Networks
+Code for Self-Diagnosing GAN: Diagnosing Underrepresented Samples in Generative Adversarial Networks (NeurIPS 2021)
 
 ## Setup
 This setting requires CUDA 11.
